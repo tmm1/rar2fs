@@ -266,67 +266,6 @@ AX_PTHREAD
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(PTHREAD_CFLAGS)
 
-# FUSE might need these later if eg. -static is set in LDFLAGS. Use a generic 
-# function like main() here since all we need is to verify if the library
-# exists or not and then append it to LIBS.
-AC_CHECK_LIB([rt], [main])
-AC_CHECK_LIB([dl], [main])
-
-save_CPPFLAGS="$CPPFLAGS"
-CPPFLAGS="$CPPFLAGS $FUSE_CPPFLAGS"
-AC_CHECK_HEADER(fuse.h,,
-    [AC_MSG_ERROR([
-        Can't find fuse.h - add alternative include search path using
-        --with-fuse and rerun configure. ])])
-
-save_LDFLAGS="$LDFLAGS"
-save_LIBS="$LIBS"
-LDFLAGS="$LDFLAGS $FUSE_LDFLAGS $PTHREAD_CFLAGS"
-LIBS="$PTHREAD_LIBS $LIBS"
-AC_CHECK_LIB(fuse4x,fuse_new, [FUSE_LIBS="-lfuse4x"],
-    [ AC_CHECK_LIB(fuse_ino64,fuse_new, [FUSE_LIBS="-lfuse_ino64"],
-        [ AC_CHECK_LIB(fuse,fuse_new, [FUSE_LIBS="-lfuse"],
-            [ AC_CHECK_LIB(osxfuse,fuse_new, [FUSE_LIBS="-losxfuse"],
-                [AC_MSG_ERROR([
-                    Can't find fuse library - add alternative library search path using
-                    --with-fuse-lib and rerun configure. ])
-            ],)
-        ],)
-    ],)
-],)
-LIBS="$FUSE_LIBS $LIBS"
-# fuse_version() became available for the first time in fuse 2.7
-AC_CHECK_FUNCS(fuse_version)
-LIBS="$save_LIBS"
-LDFLAGS="$save_LDFLAGS"
-AC_SUBST(FUSE_LIBS)
-
-########################################################
-# Check for a supported FUSE_MAJOR_VERSION.
-AC_MSG_CHECKING([for supported FUSE API version])
-if test x"$cross_compiling" = x"no"; then
-    AC_RUN_IFELSE([
-        AC_LANG_PROGRAM([[
-             #include <fuse.h>]],
-    [[
-        if(FUSE_MAJOR_VERSION == 2 && FUSE_MINOR_VERSION >= 6)
-            return 0;
-        return -1;
-    ]])],
-        [AC_MSG_RESULT([yes])],
-        [AC_MSG_RESULT([no])
-        AC_MSG_FAILURE([
-    $PACKAGE requires FUSE 2.6 or newer. Please check config.log for errors.
-    If you cannot determine the problem, mail the author of the package
-    and include the config.log file])
-        ]
-    )
-else
-    AC_MSG_RESULT([skipped])
-fi
-CPPFLAGS="$save_CPPFLAGS"
-########################################################
-
 save_CPPFLAGS="$CPPFLAGS"
 CPPFLAGS="$CPPFLAGS $UNRAR_CPPFLAGS"
 AC_LANG_PUSH([C++])
